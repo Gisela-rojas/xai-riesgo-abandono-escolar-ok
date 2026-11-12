@@ -1,13 +1,16 @@
+import json
+import os
+from datetime import date
+
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-
-from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import json
+from sqlalchemy.orm import Session
+
 from infrastructure.db import (
     get_db, engine, Base,
     EstudianteModel, IdentidadEstudianteModel, UsuarioModel, LogSeguridadModel,
-                        FeedbackExplicacionModel, PrediccionModel, IntervencionModel,
+    FeedbackExplicacionModel, PrediccionModel, IntervencionModel,
 )
 from infrastructure.adapters.output.estudiante_repository_postgres import EstudianteRepositoryPostgres
 from infrastructure.adapters.output.usuario_repository_postgres import UsuarioRepositoryPostgres
@@ -26,13 +29,23 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Direcciones permitidas: las fijas, las de la variable ALLOWED_ORIGINS de Render
+# y cualquier dirección de Vercel (*.vercel.app)
+origenes = [
+    "http://localhost:3000",
+    "https://xai-riesgo-abandono-escolar-ok.vercel.app",
+    "https://xai-riesgo-abandono-escolar-nufeiryby-gisela-rojas.vercel.app",
+]
+origenes += [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://xai-riesgo-abandono-escolar-ok.vercel.app",
-        "https://xai-riesgo-abandono-escolar-nufeirby-gisela-rojas.vercel.app"
-    ],
+    allow_origins=origenes,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,12 +59,18 @@ class RegistroRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    
+
     correo: str
     clave: str
 
+
 class FeedbackRequest(BaseModel):
     comentario: str = ""
+
+
+class IntervencionRequest(BaseModel):
+    fecha: date
+    descripcion: str
 
 
 @app.post("/estudiantes/cargar")
@@ -65,6 +84,7 @@ def cargar_estudiantes(archivo: UploadFile = File(...), db: Session = Depends(ge
 def listar_estudiantes(db: Session = Depends(get_db)):
     repositorio = EstudianteRepositoryPostgres(db)
     return repositorio.listar_todos()
+
 
 @app.get("/estudiantes/riesgo")
 def calcular_riesgo_lote(solo_resumen: bool = False, db: Session = Depends(get_db)):
@@ -136,6 +156,7 @@ def login_usuario(datos: LoginRequest, db: Session = Depends(get_db)):
 
     return resultado
 
+
 ROLES_AUTORIZADOS = {"docente", "toe"}
 
 
@@ -184,6 +205,7 @@ def ver_identidad(
         "dni": identidad.dni,
     }
 
+
 # HU-003: el docente reporta que una explicación no se comprendió
 @app.post("/estudiantes/{id_estudiante}/feedback")
 def reportar_explicacion(id_estudiante: int, datos: FeedbackRequest, db: Session = Depends(get_db)):
@@ -199,9 +221,11 @@ def reportar_explicacion(id_estudiante: int, datos: FeedbackRequest, db: Session
     db.commit()
     return {"exito": True, "mensaje": "El caso quedó registrado para revisión del equipo."}
 
+
 @app.get("/")
 def inicio():
     return {"mensaje": "API Sistema XAI funcionando"}
+
 
 # HU-006: auditoría de sesgo por género
 @app.get("/auditoria/sesgo")
@@ -228,15 +252,8 @@ def auditar_sesgo(db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 # HU-008: historial de predicciones e intervenciones
-from datetime import date
-
-
-class IntervencionRequest(BaseModel):
-    fecha: date
-    descripcion: str
-
-
 @app.get("/estudiantes/{id_estudiante}/historial")
 def ver_historial(id_estudiante: int, db: Session = Depends(get_db)):
     predicciones = (
