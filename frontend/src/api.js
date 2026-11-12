@@ -1,5 +1,5 @@
 // Dirección del backend (FastAPI)
-export const API = "http://127.0.0.1:8000";
+export const API = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
 // Trae la lista de estudiantes del backend
 export async function obtenerEstudiantes() {
@@ -48,5 +48,38 @@ export async function enviarFeedback(idEstudiante, comentario) {
 export async function obtenerExplicacion(idEstudiante) {
   const res = await fetch(`${API}/estudiantes/${idEstudiante}/explicacion`);
   if (!res.ok) throw new Error("No se pudo obtener la explicación.");
+  return await res.json();
+}
+
+
+export async function obtenerAuditoria() {
+  const res = await fetch(`${API}/auditoria/sesgo`);
+  if (res.status === 400) {
+    const data = await res.json();
+    throw new Error(data.detail || "No hay datos suficientes para auditar.");
+  }
+  if (!res.ok) throw new Error("No se pudo ejecutar la auditoría.");
+  return await res.json();
+}
+
+// HU-008: historial de predicciones e intervenciones de un estudiante
+export async function obtenerHistorial(idEstudiante) {
+  const res = await fetch(`${API}/estudiantes/${idEstudiante}/historial`);
+  if (!res.ok) throw new Error("No se pudo obtener el historial.");
+  return await res.json();
+}
+
+// HU-008: registra una intervención de seguimiento
+export async function registrarIntervencion(idEstudiante, fecha, descripcion) {
+  const res = await fetch(`${API}/estudiantes/${idEstudiante}/intervenciones`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fecha, descripcion }),
+  });
+  if (res.status === 400 || res.status === 404) {
+    const data = await res.json();
+    throw new Error(data.detail || "No se pudo registrar la intervención.");
+  }
+  if (!res.ok) throw new Error("No se pudo registrar la intervención.");
   return await res.json();
 }

@@ -1,85 +1,773 @@
+
+/* =====================================================
+   SISTEMA XAI - DISEÑO PROFESIONAL DARK MODE
+   ===================================================== */
+
+/* 1. VARIABLES GENERALES */
+
 :root {
-  --azul: #1f3a5f;
-  --azul-claro: #2c5282;
-  --fondo: #eceff3;
-  --blanco: #ffffff;
-  --texto: #1f2937;
-  --gris: #6b7280;
-  --borde: #d6dbe3;
-  --alto: #c0392b;
-  --medio: #d68910;
-  --bajo: #1e8449;
+  --azul: #17365D;
+  --azul-claro: #2563EB;
+  --azul-brillante: #3B82F6;
+
+  --fondo: #080E1B;
+  --fondo-secundario: #0B1220;
+
+  --panel: #151F32;
+  --panel-secundario: #19283D;
+  --panel-hover: #20334D;
+
+  --blanco: #E8EEF8;
+  --texto: #E8EEF8;
+  --gris: #91A4BE;
+  --borde: #293B55;
+
+  --alto: #EF4444;
+  --medio: #F59E0B;
+  --bajo: #10B981;
+
+  --sombra: 0 5px 18px rgba(0, 0, 0, 0.20);
 }
-* { box-sizing: border-box; }
-body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--fondo); color: var(--texto); }
 
-/* Layout con menú lateral */
-.app { display: flex; min-height: 100vh; }
-.menu { width: 250px; background: var(--azul); color: var(--blanco); display: flex; flex-direction: column; padding: 20px 12px; position: sticky; top: 0; height: 100vh; }
-.marca { font-size: 20px; font-weight: 700; padding: 0 10px 20px; border-bottom: 1px solid rgba(255,255,255,.2); margin-bottom: 14px; }
-.menu nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-.op { background: none; border: none; color: #dbe4f0; text-align: left; padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; font-size: 15px; }
-.op small { font-size: 11px; opacity: .6; margin-top: 2px; }
-.op:hover { background: rgba(255,255,255,.08); }
-.op.activa { background: var(--blanco); color: var(--azul); font-weight: 600; }
-.op:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #7fb3ff; outline-offset: 2px; }
-.usuario { border-top: 1px solid rgba(255,255,255,.2); padding: 14px 10px 0; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
-.salir { background: none; border: 1px solid rgba(255,255,255,.4); color: var(--blanco); padding: 6px; border-radius: 6px; cursor: pointer; }
+/* 2. CONFIGURACIÓN GENERAL */
 
-.contenido { flex: 1; padding: 32px; max-width: 1100px; }
-.contenido h1 { color: var(--azul); margin: 0 0 6px; font-size: 26px; }
-.sub { color: var(--gris); margin: 0 0 24px; }
+* {
+  box-sizing: border-box;
+}
 
-/* Bloques */
-.panel { background: var(--blanco); border-radius: 10px; padding: 22px; margin-bottom: 20px; border-top: 4px solid var(--azul); }
-.fila { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
-.campo { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-input, select, textarea { padding: 9px 10px; border: 1px solid var(--borde); border-radius: 6px; font: inherit; background: #f8f9fb; }
-.btn { background: var(--azul); color: var(--blanco); border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
-.btn:hover { background: var(--azul-claro); }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn-sec { background: var(--blanco); color: var(--azul); border: 1px solid var(--azul); }
-.btn-sec:hover { background: #eef3fa; }
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--fondo) !important;
+}
 
-/* Mensajes */
-.msg { padding: 12px 14px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
-.ok { background: #e6f4ea; color: #1e6b37; }
-.error { background: #fdecea; color: #a12c1f; }
-.info { background: #eaf1fb; color: var(--azul); }
-.aviso { background: #fff5e0; color: #8a5a00; }
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--texto);
+  min-height: 100vh;
+}
 
-/* Tabla */
-.tabla-caja { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th { text-align: left; background: #f3f5f8; color: var(--azul); padding: 10px; border-bottom: 2px solid var(--borde); }
-td { padding: 10px; border-bottom: 1px solid var(--borde); }
+/* 3. ESTRUCTURA PRINCIPAL */
 
-/* Etiquetas de riesgo */
-.riesgo { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-.riesgo.alto { background: #fbe3e0; color: var(--alto); }
-.riesgo.medio { background: #fdf0d9; color: var(--medio); }
-.riesgo.bajo { background: #e1f3e8; color: var(--bajo); }
-.riesgo.pendiente { background: #eceff3; color: var(--gris); }
+.app {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--fondo) !important;
+}
 
-/* Resumen de conteo */
-.resumen { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-.cuenta { background: var(--blanco); border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 140px; border-left: 5px solid var(--borde); }
-.cuenta b { display: block; font-size: 26px; }
-.cuenta.alto { border-color: var(--alto); } .cuenta.medio { border-color: var(--medio); } .cuenta.bajo { border-color: var(--bajo); }
+/* 4. MENÚ LATERAL */
 
-/* Pantallas de acceso */
-.acceso { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.acceso .panel { width: 100%; max-width: 400px; }
-.acceso h1 { color: var(--azul); margin-top: 0; }
-.acceso form { display: flex; flex-direction: column; gap: 12px; }
-.enlace { background: none; border: none; color: var(--azul-claro); cursor: pointer; text-decoration: underline; padding: 0; font: inherit; }
+.menu {
+  width: 255px;
+  min-width: 255px;
+  flex-shrink: 0;
+
+  background: linear-gradient(
+    180deg,
+    #1F3A5F 0%,
+    #162F50 55%,
+    #101F35 100%
+  ) !important;
+
+  color: #FFFFFF;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 20px 12px;
+
+  position: sticky;
+  top: 0;
+  height: 100vh;
+
+  border-right: 1px solid #304967;
+  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.20);
+
+  z-index: 10;
+}
+
+.marca {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+
+  padding: 0 10px 20px;
+
+  border-bottom: 1px solid rgba(255,255,255,.16);
+  margin-bottom: 14px;
+}
+
+.menu nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.menu .menu-grupo {
+  margin: 18px 6px 6px;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+
+  color: #7FB3FF;
+}
+
+.menu .op-icono {
+  display: none;
+}
+
+.op {
+  background: none;
+  border: none;
+  color: #DBE7F6;
+
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: 9px;
+
+  cursor: pointer;
+
+  display: flex;
+  flex-direction: column;
+
+  font-size: 14px;
+  transition: all .2s ease;
+}
+
+.op small {
+  font-size: 11px;
+  opacity: .7;
+  margin-top: 2px;
+}
+
+.menu nav button.op {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+
+  color: #E8EEF8;
+
+  padding: 12px 14px;
+  border-radius: 10px;
+
+  font-weight: 500;
+  margin-bottom: 2px;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  transition: all .2s ease;
+}
+
+.menu nav button.op:hover {
+  background: rgba(96,165,250,.20);
+  border-color: rgba(127,179,255,.5);
+  transform: translateX(3px);
+}
+
+.menu nav button.op.activa {
+  background: #24476E;
+  color: #FFFFFF;
+
+  font-weight: 700;
+
+  border: 1px solid #4D8DCE;
+  border-left: 5px solid #60A5FA;
+
+  box-shadow: 0 4px 12px rgba(0,0,0,.20);
+}
+
+.usuario {
+  border-top: 1px solid rgba(255,255,255,.18);
+
+  padding: 14px 10px 0;
+
+  font-size: 13px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu .usuario span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #D6E3F3;
+}
+
+.salir {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.35);
+
+  color: #FFFFFF;
+  padding: 8px;
+  border-radius: 8px;
+
+  cursor: pointer;
+}
+
+.menu .salir:hover {
+  background: rgba(255,255,255,.13);
+}
+
+/* 5. ÁREA PRINCIPAL */
+
+.contenido {
+  flex: 1;
+  min-width: 0;
+  width: calc(100% - 255px);
+  max-width: none;
+
+  padding: 28px;
+
+  background: var(--fondo) !important;
+  color: var(--texto) !important;
+}
+
+.contenido h1,
+.contenido h2,
+.contenido h3,
+.contenido h4 {
+  color: var(--texto);
+}
+
+.contenido h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+.sub {
+  color: var(--gris) !important;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+/* 6. PANELES GENERALES
+   Incluye el panel de Explicación del riesgo */
+
+.panel,
+.contenido .panel {
+  background: var(--panel) !important;
+  color: var(--texto) !important;
+
+  border: 1px solid var(--borde) !important;
+  border-top: 3px solid var(--azul-brillante) !important;
+
+  border-radius: 13px;
+  padding: 22px;
+  margin-bottom: 20px;
+
+  box-shadow: var(--sombra);
+}
+
+.panel h1,
+.panel h2,
+.panel h3,
+.panel h4,
+.panel p,
+.panel li,
+.panel label,
+.contenido .panel h1,
+.contenido .panel h2,
+.contenido .panel h3,
+.contenido .panel p,
+.contenido .panel li,
+.contenido .panel label {
+  color: var(--texto);
+}
+
+.panel .sub {
+  color: var(--gris) !important;
+}
+
+/* 7. FILAS Y CAMPOS */
+
+.fila {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  font-size: 13px;
+  color: var(--texto);
+}
+
+/* 8. FORMULARIOS */
+
+input,
+select,
+textarea {
+  padding: 10px 12px;
+
+  border: 1px solid #38516F;
+  border-radius: 8px;
+
+  font: inherit;
+  font-size: 13px;
+
+  background: #1E2B40 !important;
+  color: #E8EEF8 !important;
+
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8297B2;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.16);
+}
+
+input[type="file"] {
+  background: #1E2B40 !important;
+  color: #E8EEF8 !important;
+}
+
+input[type="file"]::file-selector-button {
+  background: #294766;
+  color: #FFFFFF;
+
+  border: 1px solid #466181;
+  border-radius: 6px;
+
+  padding: 7px 12px;
+  margin-right: 12px;
+
+  cursor: pointer;
+}
+
+select option {
+  background: #19283D;
+  color: #E8EEF8;
+}
+
+/* 9. BOTONES */
+
+.btn {
+  background: #2563EB;
+  color: #FFFFFF !important;
+
+  border: 1px solid #3B82F6;
+
+  padding: 10px 18px;
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+  font-size: 13px;
+
+  transition: all .2s ease;
+}
+
+.btn:hover {
+  background: #1D4ED8;
+  box-shadow: 0 4px 12px rgba(37,99,235,.25);
+}
+
+.btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.btn-sec {
+  background: #1E2B40;
+  color: #BFDBFE !important;
+  border: 1px solid #38516F;
+}
+
+.btn-sec:hover {
+  background: #294766;
+}
+
+/* 10. MENSAJES */
+
+.msg {
+  padding: 12px 14px;
+  border-radius: 8px;
+
+  margin: 12px 0;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.msg.ok,
+.ok {
+  background: #10352F;
+  color: #6EE7B7 !important;
+  border: 1px solid #17664F;
+}
+
+.msg.error,
+.error {
+  background: #3A202A;
+  color: #FDA4AF !important;
+  border: 1px solid #783B48;
+}
+
+.msg.info,
+.info {
+  background: #172F4E;
+  color: #93C5FD !important;
+  border: 1px solid #294B73;
+}
+
+.msg.aviso,
+.aviso {
+  background: #3A3020;
+  color: #FCD34D !important;
+  border: 1px solid #725322;
+}
+
+/* 11. TABLAS */
+
+.tabla-caja {
+  overflow-x: auto;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--texto);
+}
+
+th {
+  text-align: left;
+
+  background: #1E2B40 !important;
+  color: #BFDBFE !important;
+
+  padding: 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--borde);
+  color: #D6E3F3 !important;
+}
+
+tbody tr {
+  background: #151F32;
+}
+
+tbody tr:nth-child(even) {
+  background: #121D30;
+}
+
+tbody tr:hover {
+  background: #20334D;
+}
+
+/* 12. ETIQUETAS DE RIESGO */
+
+.riesgo {
+  display: inline-block;
+
+  padding: 5px 11px;
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.riesgo.alto {
+  background: rgba(239,68,68,.16);
+  color: #F87171 !important;
+}
+
+.riesgo.medio {
+  background: rgba(245,158,11,.16);
+  color: #FBBF24 !important;
+}
+
+.riesgo.bajo {
+  background: rgba(16,185,129,.16);
+  color: #34D399 !important;
+}
+
+.riesgo.pendiente {
+  background: #26364D;
+  color: #AAB9CD !important;
+}
+
+/* 13. RESUMEN DE CONTEO */
+
+.resumen {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.cuenta {
+  background: var(--panel);
+
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+
+  padding: 16px 18px;
+
+  flex: 1;
+  min-width: 140px;
+
+  border-left: 5px solid var(--borde);
+  box-shadow: var(--sombra);
+}
+
+.cuenta b {
+  display: block;
+  font-size: 26px;
+  color: var(--texto);
+}
+
+.cuenta.alto {
+  border-left-color: var(--alto);
+}
+
+.cuenta.medio {
+  border-left-color: var(--medio);
+}
+
+.cuenta.bajo {
+  border-left-color: var(--bajo);
+}
+
+/* 14. PANTALLAS DE ACCESO */
+
+.acceso {
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: var(--fondo);
+}
+
+.acceso .panel {
+  width: 100%;
+  max-width: 420px;
+}
+
+.acceso h1 {
+  color: var(--texto);
+  margin-top: 0;
+}
+
+.acceso form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.enlace {
+  background: none;
+  border: none;
+
+  color: #60A5FA;
+
+  cursor: pointer;
+  text-decoration: underline;
+
+  padding: 0;
+  font: inherit;
+}
+
+/* 15. ELEMENTOS DE EXPLICACIÓN SHAP */
+
+.contenido .panel ol,
+.contenido .panel ul {
+  color: var(--texto);
+  padding-left: 22px;
+}
+
+.contenido .panel li {
+  color: #D6E3F3;
+  margin-bottom: 9px;
+}
+
+.contenido .panel strong,
+.contenido .panel b {
+  color: #FFFFFF;
+}
+
+/* 16. ACCESIBILIDAD */
+
+.op:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #60A5FA;
+  outline-offset: 2px;
+}
+
+/* 17. BARRAS DE DESPLAZAMIENTO */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #38516F #111B2D;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #111B2D;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #38516F;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #52749C;
+}
+
+/* 18. DISEÑO RESPONSIVE */
 
 @media (max-width: 760px) {
-  .app { flex-direction: column; }
-  .menu { width: 100%; height: auto; position: static; }
-  .contenido { padding: 18px; }
+  .app {
+    flex-direction: column;
+  }
+
+  .menu {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    position: static;
+  }
+
+  .contenido {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .menu nav {
+    gap: 6px;
+  }
 }
+
+/* 19. IMPRESIÓN */
+
 @media print {
-  .menu, .no-imprimir { display: none !important; }
-  .contenido { padding: 0; }
+  body,
+  #root,
+  .app,
+  .contenido {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  .menu,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  .contenido {
+    padding: 0;
+    width: 100%;
+  }
+
+  .panel,
+  .cuenta {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* =========================================
+   CORRECCIÓN DE LEGIBILIDAD - EXPLICACIÓN SHAP
+   ========================================= */
+
+/* Panel principal */
+.contenido .panel {
+  background: #151F32 !important;
+  color: #E8EEF8 !important;
+  border: 1px solid #344762 !important;
+  border-top: 3px solid #3B82F6 !important;
+}
+
+/* Títulos: máximo contraste */
+.contenido .panel h1,
+.contenido .panel h2,
+.contenido .panel h3,
+.contenido .panel h4 {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+/* Párrafos y descripciones */
+.contenido .panel p,
+.contenido .panel li,
+.contenido .panel label {
+  color: #D5E2F2 !important;
+}
+
+/* Textos secundarios */
+.contenido .panel .sub,
+.contenido .panel small {
+  color: #AFC2DC !important;
+}
+
+/* Etiquetas de variables SHAP */
+.contenido .panel strong,
+.contenido .panel b {
+  color: #FFFFFF !important;
+}
+
+/* Tarjetas internas de la explicación */
+.contenido .panel .factor,
+.contenido .panel .tarjeta,
+.contenido .panel .resultado {
+  background: #1E2B40 !important;
+  border: 1px solid #38516F !important;
+  color: #E8EEF8 !important;
+}
+
+/* Textos de aportes SHAP */
+.contenido .panel .aporte,
+.contenido .panel .descripcion {
+  color: #D5E2F2 !important;
+}
+
+/* Mantener los colores de los indicadores */
+.contenido .panel .alto {
+  color: #F87171 !important;
+}
+
+.contenido .panel .medio {
+  color: #FBBF24 !important;
+}
+
+.contenido .panel .bajo {
+  color: #34D399 !important;
 }

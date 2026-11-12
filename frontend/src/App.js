@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import "./estilos.css";
 import Login from "./pantallas/Login";
 import Registro from "./pantallas/Registro";
@@ -10,12 +10,12 @@ import Reportes from "./pantallas/Reportes";
 import Auditoria from "./pantallas/Auditoria";
 
 const MENU = [
-  { id: "dashboard", texto: "Dashboard de riesgo", hu: "HU-002 · HU-004 · HU-005" },
-  { id: "cargar", texto: "Cargar datos", hu: "HU-001" },
-  { id: "explicacion", texto: "Explicación del riesgo", hu: "HU-003" },
-  { id: "historial", texto: "Historial e intervenciones", hu: "HU-008" },
-  { id: "reportes", texto: "Reportes", hu: "HU-009" },
-  { id: "auditoria", texto: "Auditoría de sesgo", hu: "HU-006" },
+  { id: "dashboard", texto: "Dashboard de riesgo", grupo: "Riesgo", icono: "📊", color: "#60a5fa" },
+  { id: "cargar", texto: "Cargar datos", grupo: "Riesgo", icono: "📁", color: "#34d399" },
+  { id: "explicacion", texto: "Explicación del riesgo", grupo: "Riesgo", icono: "💡", color: "#a78bfa" },
+  { id: "historial", texto: "Historial e intervenciones", grupo: "Seguimiento", icono: "🕒", color: "#fbbf24" },
+  { id: "reportes", texto: "Reportes", grupo: "Seguimiento", icono: "📄", color: "#f472b6" },
+  { id: "auditoria", texto: "Auditoría de sesgo", grupo: "Seguimiento", icono: "⚖️", color: "#2dd4bf" },
 ];
 
 export default function App() {
@@ -42,15 +42,20 @@ export default function App() {
       <aside className="menu">
         <div className="marca">Sistema XAI</div>
         <nav>
-          {MENU.map((op) => (
-            <button
-              key={op.id}
-              className={vista === op.id ? "op activa" : "op"}
-              onClick={() => setVista(op.id)}
-            >
-              <span>{op.texto}</span>
-              <small>{op.hu}</small>
-            </button>
+          {MENU.map((op, i) => (
+            <Fragment key={op.id}>
+              {(i === 0 || MENU[i - 1].grupo !== op.grupo) && (
+                <div className="menu-grupo">{op.grupo}</div>
+              )}
+              <button
+                className={vista === op.id ? "op activa" : "op"}
+                style={{ "--color": op.color }}
+                onClick={() => setVista(op.id)}
+              >
+                <span className="op-icono">{op.icono}</span>
+                <span className="op-texto">{op.texto}</span>
+              </button>
+            </Fragment>
           ))}
         </nav>
         <div className="usuario">

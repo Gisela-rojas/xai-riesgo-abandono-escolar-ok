@@ -44,6 +44,7 @@ class CargarDatosEstudiantesUseCase:
                 rendimiento_academico=str(row["rendimiento_academico"]),
                 grado=str(row["grado"]).strip(),
                 aula=str(row["aula"]).strip(),
+                abandono=int(row["abandono"]) if "abandono" in df.columns and pd.notna(row["abandono"]) else None,
             )
             for _, row in df.iterrows()
         ]

@@ -1,0 +1,13 @@
+
+# Archivos Python temporales
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+
+# Credenciales
+**/.env
+
+# Archivos de datos locales
+backend/bd.xlsx
+backend/prueba_xgboost.py

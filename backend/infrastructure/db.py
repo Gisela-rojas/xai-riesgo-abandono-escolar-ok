@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, Numeric, Text, TIMESTAMP
+from sqlalchemy import create_engine, Column, Integer, String, Numeric, Text, TIMESTAMP, Date
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.sql import func
 
@@ -72,6 +72,25 @@ class LogSeguridadModel(Base):
     motivo = Column(String(200))
     registrado_en = Column(TIMESTAMP, server_default=func.now())
 
+class PrediccionModel(Base):
+    __tablename__ = "predicciones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_estudiante = Column(Integer, nullable=False, index=True)
+    nivel_riesgo = Column(String(20), nullable=False)
+    probabilidad = Column(Numeric(5, 4), nullable=False)
+    factores_influyentes = Column(Text)
+    creado_en = Column(TIMESTAMP, server_default=func.now())
+
+
+class IntervencionModel(Base):
+    __tablename__ = "intervenciones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_estudiante = Column(Integer, nullable=False, index=True)
+    fecha = Column(Date, nullable=False)
+    descripcion = Column(Text, nullable=False)
+    registrada_en = Column(TIMESTAMP, server_default=func.now())    
 
 def get_db():
     db = SessionLocal()

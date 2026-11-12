@@ -1,21 +1,26 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-
+import json
 from infrastructure.db import (
     get_db, engine, Base,
     EstudianteModel, IdentidadEstudianteModel, UsuarioModel, LogSeguridadModel,
-        FeedbackExplicacionModel,
+                        FeedbackExplicacionModel, PrediccionModel, IntervencionModel,
 )
 from infrastructure.adapters.output.estudiante_repository_postgres import EstudianteRepositoryPostgres
 from infrastructure.adapters.output.usuario_repository_postgres import UsuarioRepositoryPostgres
 from infrastructure.adapters.output.predictor_riesgo_reglas import PredictorRiesgoReglas
+from infrastructure.adapters.output.predictor_riesgo_xgboost import PredictorRiesgoXGBoost
 from application.useCases.cargar_datos_estudiantes import CargarDatosEstudiantesUseCase
 from application.useCases.registrar_usuario import RegistrarUsuarioUseCase
 from application.useCases.login_usuario import LoginUsuarioUseCase
 from application.useCases.calcular_riesgo import CalcularRiesgoUseCase
 from application.useCases.explicar_riesgo import ExplicarRiesgoUseCase
+from application.useCases.calcular_riesgo_lote import CalcularRiesgoLoteUseCase
+from application.useCases.auditar_sesgo import AuditarSesgoUseCase
+from domain.entities.estudiante import Estudiante
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,6 +61,16 @@ def listar_estudiantes(db: Session = Depends(get_db)):
     repositorio = EstudianteRepositoryPostgres(db)
     return repositorio.listar_todos()
 
+@app.get("/estudiantes/riesgo")
+def calcular_riesgo_lote(solo_resumen: bool = False, db: Session = Depends(get_db)):
+    repositorio = EstudianteRepositoryPostgres(db)
+    estudiantes = repositorio.listar_entidades()
+    caso_de_uso = CalcularRiesgoLoteUseCase(PredictorRiesgoXGBoost())
+    resultado = caso_de_uso.ejecutar(estudiantes)
+    if solo_resumen:
+        return {"fecha_calculo": resultado["fecha_calculo"], "resumen": resultado["resumen"]}
+    return resultado
+
 
 @app.get("/estudiantes/{id_estudiante}/riesgo")
 def calcular_riesgo(id_estudiante: int, db: Session = Depends(get_db)):
@@ -63,7 +78,7 @@ def calcular_riesgo(id_estudiante: int, db: Session = Depends(get_db)):
     estudiante = repositorio.obtener_por_id_estudiante(id_estudiante)
     if estudiante is None:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    caso_de_uso = CalcularRiesgoUseCase(PredictorRiesgoReglas())
+    caso_de_uso = CalcularRiesgoUseCase(PredictorRiesgoXGBoost())
     return caso_de_uso.ejecutar(estudiante)
 
 
@@ -73,8 +88,25 @@ def explicar_riesgo(id_estudiante: int, db: Session = Depends(get_db)):
     estudiante = repositorio.obtener_por_id_estudiante(id_estudiante)
     if estudiante is None:
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
-    caso_de_uso = ExplicarRiesgoUseCase(PredictorRiesgoReglas())
-    return caso_de_uso.ejecutar(estudiante)
+
+    caso_de_uso = ExplicarRiesgoUseCase(PredictorRiesgoXGBoost())
+    resultado = caso_de_uso.ejecutar(estudiante)
+
+    # HU-008: guardar la predicción en el historial
+    factores_texto = json.dumps(
+        [{"nombre": f.nombre, "descripcion": f.descripcion, "aporte": f.aporte}
+         for f in resultado.factores],
+        ensure_ascii=False,
+    )
+    db.add(PrediccionModel(
+        id_estudiante=id_estudiante,
+        nivel_riesgo=resultado.nivel,
+        probabilidad=round(resultado.puntaje / 100, 4),
+        factores_influyentes=factores_texto,
+    ))
+    db.commit()
+
+    return resultado
 
 
 @app.post("/usuarios/registrar")
@@ -88,7 +120,16 @@ def registrar_usuario(datos: RegistroRequest, db: Session = Depends(get_db)):
 def login_usuario(datos: LoginRequest, db: Session = Depends(get_db)):
     repositorio = UsuarioRepositoryPostgres(db)
     caso_de_uso = LoginUsuarioUseCase(repositorio)
-    return caso_de_uso.ejecutar(datos.correo, datos.clave)
+
+    resultado = caso_de_uso.ejecutar(datos.correo, datos.clave)
+
+    if not resultado.get("exito"):
+        raise HTTPException(
+            status_code=401,
+            detail="Correo o contraseña incorrectos."
+        )
+
+    return resultado
 
 ROLES_AUTORIZADOS = {"docente", "toe"}
 
@@ -156,3 +197,85 @@ def reportar_explicacion(id_estudiante: int, datos: FeedbackRequest, db: Session
 @app.get("/")
 def inicio():
     return {"mensaje": "API Sistema XAI funcionando"}
+
+# HU-006: auditoría de sesgo por género
+@app.get("/auditoria/sesgo")
+def auditar_sesgo(db: Session = Depends(get_db)):
+    filas = db.query(EstudianteModel).all()
+    estudiantes = [
+        Estudiante(
+            id_estudiante=f.id_estudiante,
+            genero=f.genero,
+            asistencia=float(f.asistencia) if f.asistencia is not None else None,
+            promedio_academico=float(f.promedio_academico) if f.promedio_academico is not None else None,
+            cursos_desaprobados=f.cursos_desaprobados,
+            inasistencias_consecutivas=f.inasistencias_consecutivas,
+            rendimiento_academico=f.rendimiento_academico,
+            grado=f.grado,
+            aula=f.aula,
+            abandono=f.abandono,
+        )
+        for f in filas
+    ]
+    caso_de_uso = AuditarSesgoUseCase(PredictorRiesgoXGBoost())
+    try:
+        return caso_de_uso.ejecutar(estudiantes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# HU-008: historial de predicciones e intervenciones
+from datetime import date
+
+
+class IntervencionRequest(BaseModel):
+    fecha: date
+    descripcion: str
+
+
+@app.get("/estudiantes/{id_estudiante}/historial")
+def ver_historial(id_estudiante: int, db: Session = Depends(get_db)):
+    predicciones = (
+        db.query(PrediccionModel)
+        .filter(PrediccionModel.id_estudiante == id_estudiante)
+        .order_by(PrediccionModel.id.desc())
+        .all()
+    )
+    intervenciones = (
+        db.query(IntervencionModel)
+        .filter(IntervencionModel.id_estudiante == id_estudiante)
+        .order_by(IntervencionModel.fecha.desc(), IntervencionModel.id.desc())
+        .all()
+    )
+    return {
+        "id_estudiante": id_estudiante,
+        "predicciones": [
+            {
+                "id": p.id,
+                "fecha": p.creado_en.isoformat() if p.creado_en else None,
+                "puntaje": round(float(p.probabilidad) * 100, 1),
+                "nivel": p.nivel_riesgo,
+                "factores": json.loads(p.factores_influyentes) if p.factores_influyentes else [],
+            }
+            for p in predicciones
+        ],
+        "intervenciones": [
+            {"id": i.id, "fecha": i.fecha.isoformat(), "descripcion": i.descripcion}
+            for i in intervenciones
+        ],
+    }
+
+
+@app.post("/estudiantes/{id_estudiante}/intervenciones")
+def registrar_intervencion(id_estudiante: int, datos: IntervencionRequest, db: Session = Depends(get_db)):
+    repositorio = EstudianteRepositoryPostgres(db)
+    if repositorio.obtener_por_id_estudiante(id_estudiante) is None:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+    if not datos.descripcion.strip():
+        raise HTTPException(status_code=400, detail="Escribe qué se hizo con el estudiante.")
+    db.add(IntervencionModel(
+        id_estudiante=id_estudiante,
+        fecha=datos.fecha,
+        descripcion=datos.descripcion.strip(),
+    ))
+    db.commit()
+    return {"exito": True, "mensaje": "Intervención registrada."}

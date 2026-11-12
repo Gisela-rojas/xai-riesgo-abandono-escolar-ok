@@ -102,3 +102,21 @@ class EstudianteRepositoryPostgres(EstudianteRepositoryPort):
             aula=fila.aula,
             abandono=fila.abandono,
         )
+
+    def listar_entidades(self) -> List[Estudiante]:
+        filas = self.db.query(EstudianteModel).all()
+        return [
+            Estudiante(
+                id_estudiante=f.id_estudiante,
+                genero=f.genero,
+                asistencia=convertir_float_seguro(f.asistencia),
+                promedio_academico=convertir_float_seguro(f.promedio_academico),
+                cursos_desaprobados=f.cursos_desaprobados,
+                inasistencias_consecutivas=f.inasistencias_consecutivas,
+                rendimiento_academico=f.rendimiento_academico,
+                grado=f.grado,
+                aula=f.aula,
+                abandono=f.abandono,
+            )
+            for f in filas
+        ]
