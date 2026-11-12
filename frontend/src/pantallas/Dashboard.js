@@ -1,8 +1,8 @@
 
 import { useEffect, useMemo, useState } from "react";
-import { obtenerRiesgo } from "../api";
+import { API, obtenerRiesgo } from "../api";
 
-const URL_RIESGO_LOTE = "http://127.0.0.1:8000/estudiantes/riesgo";
+const URL_RIESGO_LOTE = `${API}/estudiantes/riesgo`;
 const POR_PAGINA = 50;
 
 const C = {
