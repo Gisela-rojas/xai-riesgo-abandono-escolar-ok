@@ -83,3 +83,28 @@ export async function registrarIntervencion(idEstudiante, fecha, descripcion) {
   if (!res.ok) throw new Error("No se pudo registrar la intervención.");
   return await res.json();
 }
+
+// HU-009: descarga un reporte en Excel generado por el backend
+async function descargarArchivo(url, nombre) {
+  const res = await fetch(url);
+  if (res.status === 400 || res.status === 404) {
+    const data = await res.json();
+    throw new Error(data.detail || "No se pudo generar el reporte.");
+  }
+  if (!res.ok) throw new Error("No se pudo generar el reporte.");
+  const blob = await res.blob();
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(blob);
+  enlace.download = nombre;
+  enlace.click();
+  URL.revokeObjectURL(enlace.href);
+}
+
+export function descargarReporteEstudiante(id) {
+  return descargarArchivo(`${API}/reportes/estudiante/${id}`, `reporte_estudiante_${id}.xlsx`);
+}
+
+export function descargarReporteAula(grado, aula) {
+  const consulta = `grado=${encodeURIComponent(grado)}&aula=${encodeURIComponent(aula)}`;
+  return descargarArchivo(`${API}/reportes/aula?${consulta}`, `reporte_aula_${grado}_${aula}.xlsx`);
+}

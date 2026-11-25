@@ -301,3 +301,98 @@ def registrar_intervencion(id_estudiante: int, datos: IntervencionRequest, db: S
     ))
     db.commit()
     return {"exito": True, "mensaje": "Intervención registrada."}
+
+# HU-009: reportes en Excel
+import io
+import pandas as pd
+from fastapi.responses import StreamingResponse
+
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _enviar_excel(hojas: dict, nombre: str):
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        for titulo, df in hojas.items():
+            df.to_excel(writer, sheet_name=titulo, index=False)
+    buffer.seek(0)
+    return StreamingResponse(
+        buffer,
+        media_type=XLSX,
+        headers={"Content-Disposition": f'attachment; filename="{nombre}"'},
+    )
+
+
+@app.get("/reportes/estudiante/{id_estudiante}")
+def reporte_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
+    repositorio = EstudianteRepositoryPostgres(db)
+    estudiante = repositorio.obtener_por_id_estudiante(id_estudiante)
+    if estudiante is None:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+
+    predictor = PredictorRiesgoXGBoost()
+    riesgo = CalcularRiesgoUseCase(predictor).ejecutar(estudiante)
+    if riesgo.nivel == "indeterminado":
+        raise HTTPException(status_code=400, detail=riesgo.advertencia)
+    explicacion = ExplicarRiesgoUseCase(predictor).ejecutar(estudiante)
+
+    datos = pd.DataFrame([{
+        "Código": estudiante.id_estudiante,
+        "Género": estudiante.genero,
+        "Grado": estudiante.grado,
+        "Aula": estudiante.aula,
+        "Asistencia (%)": estudiante.asistencia,
+        "Promedio académico": estudiante.promedio_academico,
+        "Cursos desaprobados": estudiante.cursos_desaprobados,
+        "Inasistencias consecutivas": estudiante.inasistencias_consecutivas,
+    }])
+    nivel = pd.DataFrame([{
+        "Nivel de riesgo": riesgo.nivel,
+        "Probabilidad (%)": riesgo.puntaje,
+        "Fecha de cálculo": riesgo.fecha_calculo.strftime("%d/%m/%Y %H:%M"),
+    }])
+    factores = pd.DataFrame([{
+        "Factor": f.nombre,
+        "Detalle": f.descripcion,
+        "Efecto": "Aumenta el riesgo" if f.aporte > 0 else "Reduce el riesgo",
+        "Peso": f.aporte,
+    } for f in explicacion.factores])
+
+    return _enviar_excel(
+        {"Estudiante": datos, "Riesgo": nivel, "Explicación": factores},
+        f"reporte_estudiante_{id_estudiante}.xlsx",
+    )
+
+
+@app.get("/reportes/aula")
+def reporte_aula(grado: str, aula: str, db: Session = Depends(get_db)):
+    repositorio = EstudianteRepositoryPostgres(db)
+    estudiantes = [
+        e for e in repositorio.listar_entidades()
+        if (e.grado or "").strip() == grado.strip() and (e.aula or "").strip() == aula.strip()
+    ]
+    if not estudiantes:
+        raise HTTPException(status_code=404, detail="No hay estudiantes evaluados para ese grado y aula.")
+
+    caso_de_uso = CalcularRiesgoUseCase(PredictorRiesgoXGBoost())
+    filas = []
+    for e in estudiantes:
+        r = caso_de_uso.ejecutar(e)
+        filas.append({
+            "Código": e.id_estudiante,
+            "Género": e.genero,
+            "Asistencia (%)": e.asistencia,
+            "Promedio académico": e.promedio_academico,
+            "Cursos desaprobados": e.cursos_desaprobados,
+            "Inasistencias consecutivas": e.inasistencias_consecutivas,
+            "Probabilidad (%)": r.puntaje,
+            "Nivel de riesgo": r.nivel,
+        })
+    tabla = pd.DataFrame(filas).sort_values("Probabilidad (%)", ascending=False)
+    resumen = (
+        tabla.groupby("Nivel de riesgo").size().reset_index(name="Estudiantes")
+    )
+    return _enviar_excel(
+        {"Resumen": resumen, "Estudiantes": tabla},
+        f"reporte_aula_{grado.strip()}_{aula.strip()}.xlsx",
+    )
